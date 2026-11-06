@@ -1,0 +1,53 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - run: npm ci --no-audit --no-fund
+      - run: FOLIA_BUILD_TARGET=capacitor npm run build
+      - run: npm install @capacitor/cli@8.4.2 --no-audit --no-fund
+      - run: npx cap sync ios
+      - name: Archive NO signing
+        run: |
+          cd ios/App
+          xcodebuild archive \
+            -workspace App.xcodeproj/project.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath build/Folia.xcarchive \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            ENABLE_BITCODE=NO \
+            || xcodebuild archive \
+              -project App.xcodeproj \
+              -scheme App \
+              -configuration Release \
+              -archivePath build/Folia.xcarchive \
+              -destination 'generic/platform=iOS' \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY="" \
+              ENABLE_BITCODE=NO
+      - name: Package IPA
+        run: |
+          cd ios/App
+          APP=$(find build/Folia.xcarchive/Products/Applications -name "*.app" | head -1)
+          mkdir -p build/export/Payload
+          cp -r "$APP" build/export/Payload/
+          cd build/export && zip -r Folia.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Folia.ipa-unsigned
+          path: ios/App/build/export/Folia.ipa
+          retention-days: 30

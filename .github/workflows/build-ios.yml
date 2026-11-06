@@ -5,39 +5,38 @@ on:
 
 jobs:
   build:
+    name: Build Folia iOS
     runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
 
-      - run: npm ci --no-audit --no-fund
+      - name: Install npm dependencies
+        run: npm ci --no-audit --no-fund
 
-      - name: Install Capacitor
-        run: npm install @capacitor/cli@8.4.2 @capacitor/ios@8.4.2 @capacitor/core@8.4.2 --no-audit --no-fund
+      - name: Install Capacitor CLI
+        run: npm install @capacitor/cli@8.4.2 @capacitor/ios@8.4.2 --no-audit --no-fund
 
       - name: Create capacitor config
         run: |
           cat > capacitor.config.json << 'EOF'
-          {
-            "appId": "top.izuna.foliamajor",
-            "appName": "Folia",
-            "webDir": "dist",
-            "backgroundColor": "#09090b"
-          }
+          {"appId":"top.izuna.foliamajor","appName":"Folia","webDir":"dist","backgroundColor":"#09090b"}
           EOF
-          cat capacitor.config.json
 
-      - run: FOLIA_BUILD_TARGET=capacitor npm run build
+      - name: Build web assets
+        run: FOLIA_BUILD_TARGET=capacitor VITE_NETEASE_API_BASE=https://neteasecloudmusicapi.ivelly.com npm run build
 
-      - name: Add iOS platform
-        run: npx cap add ios
-
-      - name: Sync dist to iOS
-        run: npx cap sync ios
+      - name: Sync Capacitor iOS
+        run: |
+          npx cap add ios || true
+          npx cap sync ios
 
       - name: Archive NO signing
         run: |
@@ -71,7 +70,8 @@ jobs:
           cp -r "$APP" build/export/Payload/
           cd build/export && zip -r Folia.ipa Payload
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
         with:
           name: Folia.ipa-unsigned
           path: ios/App/build/export/Folia.ipa

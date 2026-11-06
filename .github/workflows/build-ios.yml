@@ -15,15 +15,17 @@ jobs:
           cache: 'npm'
 
       - run: npm ci --no-audit --no-fund
+
+      - name: Install Capacitor
+        run: npm install @capacitor/cli@8.4.2 @capacitor/ios@8.4.2 --no-audit --no-fund
+
       - run: FOLIA_BUILD_TARGET=capacitor npm run build
 
-      # 手动复制 dist 到 iOS 目录（跳过 cap sync，因为没装 @capacitor/ios 包）
-      - name: Copy dist to iOS
-        run: |
-          rm -rf ios/App/App/public
-          mkdir -p ios/App/App/public
-          cp -R dist/* ios/App/App/public/
-          ls ios/App/App/public/
+      - name: Create iOS platform
+        run: npx cap add ios || true
+
+      - name: Sync dist to iOS
+        run: npx cap sync ios
 
       - name: Archive NO signing
         run: |

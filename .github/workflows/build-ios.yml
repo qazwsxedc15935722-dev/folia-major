@@ -17,12 +17,24 @@ jobs:
       - run: npm ci --no-audit --no-fund
 
       - name: Install Capacitor
-        run: npm install @capacitor/cli@8.4.2 @capacitor/ios@8.4.2 --no-audit --no-fund
+        run: npm install @capacitor/cli@8.4.2 @capacitor/ios@8.4.2 @capacitor/core@8.4.2 --no-audit --no-fund
+
+      - name: Create capacitor config
+        run: |
+          cat > capacitor.config.json << 'EOF'
+          {
+            "appId": "top.izuna.foliamajor",
+            "appName": "Folia",
+            "webDir": "dist",
+            "backgroundColor": "#09090b"
+          }
+          EOF
+          cat capacitor.config.json
 
       - run: FOLIA_BUILD_TARGET=capacitor npm run build
 
-      - name: Create iOS platform
-        run: npx cap add ios || true
+      - name: Add iOS platform
+        run: npx cap add ios
 
       - name: Sync dist to iOS
         run: npx cap sync ios

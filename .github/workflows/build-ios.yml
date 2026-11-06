@@ -8,14 +8,23 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
+
       - run: npm ci --no-audit --no-fund
       - run: FOLIA_BUILD_TARGET=capacitor npm run build
-      - run: npm install @capacitor/cli@8.4.2 --no-audit --no-fund
-      - run: npx cap sync ios
+
+      # 手动复制 dist 到 iOS 目录（跳过 cap sync，因为没装 @capacitor/ios 包）
+      - name: Copy dist to iOS
+        run: |
+          rm -rf ios/App/App/public
+          mkdir -p ios/App/App/public
+          cp -R dist/* ios/App/App/public/
+          ls ios/App/App/public/
+
       - name: Archive NO signing
         run: |
           cd ios/App
@@ -39,6 +48,7 @@ jobs:
               CODE_SIGNING_REQUIRED=NO \
               CODE_SIGN_IDENTITY="" \
               ENABLE_BITCODE=NO
+
       - name: Package IPA
         run: |
           cd ios/App
@@ -46,6 +56,7 @@ jobs:
           mkdir -p build/export/Payload
           cp -r "$APP" build/export/Payload/
           cd build/export && zip -r Folia.ipa Payload
+
       - uses: actions/upload-artifact@v4
         with:
           name: Folia.ipa-unsigned

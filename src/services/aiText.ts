@@ -38,8 +38,8 @@ export {
 
 /** Our web route for the theme ask, one per service. */
 const THEME_ROUTES: Record<WebAiProvider, string> = {
-  gemini: '/api/generate-theme',
-  openai: '/api/generate-theme_openai',
+  gemini: 'http://192.168.0.101:8787/api/generate-theme',
+  openai: 'http://192.168.0.101:8787/api/generate-theme',
 };
 
 /** Anything that is not a service of the table goes to Gemini's route. */
